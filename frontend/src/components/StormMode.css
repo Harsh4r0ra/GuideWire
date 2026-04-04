@@ -1,0 +1,368 @@
+/**
+ * Storm Mode Styles
+ */
+
+/* Overlay */
+.storm-mode-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9999;
+  background: linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Animated Background */
+.storm-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+}
+
+/* Lightning */
+.lightning {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.8);
+  opacity: 0;
+  animation: lightning 4s ease-in-out infinite;
+}
+
+@keyframes lightning {
+  0%, 100% { opacity: 0; }
+  45%, 55% { opacity: 0; }
+  50% { opacity: 1; }
+  51% { opacity: 0; }
+  52% { opacity: 1; }
+  53% { opacity: 0; }
+  54% { opacity: 1; }
+}
+
+/* Rain */
+.rain-container {
+  position: absolute;
+  top: -20px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+}
+
+.rain-drop {
+  position: absolute;
+  width: 2px;
+  height: 20px;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.8));
+  animation: rain-fall linear infinite;
+}
+
+@keyframes rain-fall {
+  to {
+    transform: translateY(100vh);
+  }
+}
+
+/* Waves */
+.storm-waves {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 200px;
+}
+
+.wave {
+  position: absolute;
+  bottom: 0;
+  left: -50%;
+  width: 200%;
+  height: 100%;
+  background: radial-gradient(ellipse at center, rgba(33, 150, 243, 0.3) 0%, transparent 70%);
+  animation: wave-move 8s ease-in-out infinite;
+}
+
+.wave-1 { animation-delay: 0s; }
+.wave-2 { animation-delay: -2s; opacity: 0.5; }
+.wave-3 { animation-delay: -4s; opacity: 0.3; }
+
+@keyframes wave-move {
+  0%, 100% { transform: translateX(0) translateY(0); }
+  50% { transform: translateX(25%) translateY(-20px); }
+}
+
+/* Content */
+.storm-content {
+  position: relative;
+  z-index: 10;
+  text-align: center;
+  padding: 40px;
+  max-width: 500px;
+}
+
+/* Throbbing Animation */
+.throbbing {
+  animation: throb 1.5s ease-in-out infinite;
+}
+
+@keyframes throb {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+/* Storm Icon */
+.storm-icon-wrapper {
+  margin-bottom: 24px;
+}
+
+.storm-icon {
+  font-size: 120px;
+  filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.5));
+}
+
+/* Title */
+.storm-title {
+  font-size: 36px;
+  font-weight: 700;
+  color: white;
+  margin: 0 0 24px 0;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.8; }
+}
+
+/* Details */
+.storm-details {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.storm-event {
+  font-size: 24px;
+  font-weight: 600;
+  color: white;
+  margin: 0 0 12px 0;
+}
+
+.storm-location {
+  font-size: 18px;
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0 0 12px 0;
+}
+
+.storm-severity {
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0;
+}
+
+.severity-high {
+  color: #ff5252;
+  font-weight: 700;
+}
+
+/* Message */
+.storm-message {
+  margin-bottom: 32px;
+}
+
+.storm-message p {
+  font-size: 18px;
+  color: rgba(255, 255, 255, 0.9);
+  margin: 8px 0;
+}
+
+/* Progress */
+.storm-progress {
+  margin-bottom: 24px;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4caf50, #8bc34a);
+  transition: width 0.3s ease;
+  animation: shimmer 2s linear infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.progress-text {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.8);
+  margin: 0;
+}
+
+/* Dismiss Button */
+.storm-dismiss-btn {
+  padding: 16px 32px;
+  background: linear-gradient(135deg, #2196f3, #1976d2);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 20px rgba(33, 150, 243, 0.4);
+}
+
+.storm-dismiss-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 30px rgba(33, 150, 243, 0.6);
+}
+
+/* Storm Badge */
+.storm-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: linear-gradient(135deg, #f44336, #d32f2f);
+  border-radius: 20px;
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(244, 67, 54, 0.4);
+}
+
+.storm-badge-icon {
+  font-size: 18px;
+}
+
+.storm-badge-severity {
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+/* Storm Notification */
+.storm-notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, #f44336, #d32f2f);
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(244, 67, 54, 0.4);
+  color: white;
+  z-index: 9998;
+  max-width: 400px;
+}
+
+.slide-in {
+  animation: slideInFromRight 0.5s ease-out;
+}
+
+@keyframes slideInFromRight {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.storm-notif-icon {
+  font-size: 32px;
+  flex-shrink: 0;
+}
+
+.storm-notif-content h4 {
+  margin: 0 0 4px 0;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.storm-notif-content p {
+  margin: 0;
+  font-size: 14px;
+  opacity: 0.95;
+}
+
+.storm-notif-close {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 4px;
+  opacity: 0.8;
+  transition: opacity 0.2s;
+}
+
+.storm-notif-close:hover {
+  opacity: 1;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .storm-content {
+    padding: 20px;
+  }
+
+  .storm-icon {
+    font-size: 80px;
+  }
+
+  .storm-title {
+    font-size: 28px;
+  }
+
+  .storm-event {
+    font-size: 20px;
+  }
+
+  .storm-location,
+  .storm-message p {
+    font-size: 16px;
+  }
+
+  .storm-notification {
+    top: 10px;
+    right: 10px;
+    left: 10px;
+    max-width: none;
+  }
+}

@@ -1,0 +1,208 @@
+/**
+ * Loading Skeleton Styles
+ */
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    #f0f0f0 25%,
+    #e0e0e0 50%,
+    #f0f0f0 75%
+  );
+  background-size: 200% 100%;
+  animation: loading 1.5s ease-in-out infinite;
+}
+
+@keyframes loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Dashboard Card Skeleton */
+.dashboard-card-skeleton {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.skeleton-header {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.skeleton-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  justify-content: center;
+}
+
+.skeleton-body {
+  margin-top: 12px;
+}
+
+/* Policy Card Skeleton */
+.policy-card-skeleton {
+  background: white;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.skeleton-details {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Claim List Skeleton */
+.claim-list-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.claim-item-skeleton {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+.skeleton-left {
+  flex-shrink: 0;
+}
+
+.skeleton-right {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.skeleton-amount {
+  flex-shrink: 0;
+}
+
+/* Table Skeleton */
+.table-skeleton {
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.table-header-skeleton {
+  display: grid;
+  gap: 16px;
+  padding: 16px;
+  background: #f8f9fa;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.table-row-skeleton {
+  display: grid;
+  gap: 16px;
+  padding: 16px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.table-row-skeleton:last-child {
+  border-bottom: none;
+}
+
+/* Worker Profile Skeleton */
+.worker-profile-skeleton {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+}
+
+.profile-header-skeleton {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.profile-info-skeleton {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.profile-stats-skeleton {
+  margin-top: 16px;
+}
+
+/* Chart Skeleton */
+.chart-skeleton {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Map Skeleton */
+.map-skeleton {
+  position: relative;
+  background: #f5f5f5;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.map-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #666;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+  .skeleton {
+    background: linear-gradient(
+      90deg,
+      #2a2a2a 25%,
+      #1a1a1a 50%,
+      #2a2a2a 75%
+    );
+  }
+
+  .dashboard-card-skeleton,
+  .policy-card-skeleton,
+  .claim-item-skeleton,
+  .table-skeleton,
+  .worker-profile-skeleton,
+  .chart-skeleton {
+    background: #1e1e1e;
+  }
+
+  .table-header-skeleton {
+    background: #2a2a2a;
+    border-color: #3a3a3a;
+  }
+
+  .table-row-skeleton {
+    border-color: #2a2a2a;
+  }
+
+  .map-overlay {
+    color: #aaa;
+  }
+}

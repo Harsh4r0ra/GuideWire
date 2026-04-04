@@ -1,0 +1,347 @@
+/**
+ * Payout Confetti Styles
+ */
+
+/* Overlay */
+.payout-confetti-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Confetti Container */
+.confetti-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.confetti-piece {
+  position: absolute;
+  top: -10px;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  animation: confetti-fall linear forwards;
+  opacity: 0.9;
+}
+
+@keyframes confetti-fall {
+  to {
+    transform: translateY(100vh) rotate(720deg);
+    opacity: 0;
+  }
+}
+
+/* Success Message */
+.payout-success-message {
+  position: relative;
+  z-index: 10;
+  text-align: center;
+  background: white;
+  padding: 48px 40px;
+  border-radius: 24px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  max-width: 450px;
+  animation: popIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+@keyframes popIn {
+  from {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Success Icon */
+.success-icon {
+  font-size: 80px;
+  margin-bottom: 16px;
+  filter: drop-shadow(0 4px 12px rgba(255, 215, 0, 0.4));
+}
+
+.bounce {
+  animation: bounce 1s ease-in-out infinite;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-20px); }
+}
+
+/* Title */
+.success-title {
+  font-size: 32px;
+  font-weight: 700;
+  color: #4caf50;
+  margin: 0 0 24px 0;
+  animation: slideDown 0.5s ease-out 0.2s both;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Amount */
+.success-amount {
+  font-size: 56px;
+  font-weight: 800;
+  color: #2e7d32;
+  margin: 0 0 16px 0;
+  animation: scaleIn 0.5s ease-out 0.4s both;
+  text-shadow: 2px 2px 8px rgba(46, 125, 50, 0.2);
+}
+
+.currency {
+  font-size: 40px;
+  opacity: 0.8;
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Subtitle */
+.success-subtitle {
+  font-size: 16px;
+  color: #666;
+  margin: 0 0 32px 0;
+  animation: slideUp 0.5s ease-out 0.6s both;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Checkmark */
+.success-checkmark {
+  animation: slideUp 0.5s ease-out 0.8s both;
+}
+
+.checkmark-svg {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  display: block;
+  stroke-width: 3;
+  stroke: #4caf50;
+  margin: 0 auto;
+}
+
+.checkmark-circle {
+  stroke-dasharray: 166;
+  stroke-dashoffset: 166;
+  stroke-width: 3;
+  stroke: #4caf50;
+  fill: none;
+  animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+}
+
+.checkmark-check {
+  transform-origin: 50% 50%;
+  stroke-dasharray: 48;
+  stroke-dashoffset: 48;
+  animation: stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.6s forwards;
+}
+
+@keyframes stroke {
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Success Badge */
+.payout-success-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: linear-gradient(135deg, #4caf50, #66bb6a);
+  border-radius: 20px;
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+  animation: wiggle 0.5s ease-in-out;
+}
+
+@keyframes wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-5deg); }
+  75% { transform: rotate(5deg); }
+}
+
+.badge-icon {
+  font-size: 18px;
+}
+
+/* Celebration Button */
+.celebration-btn {
+  position: relative;
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #ffd700, #ffed4e);
+  color: #333;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.4);
+  overflow: hidden;
+}
+
+.celebration-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 215, 0, 0.6);
+}
+
+.celebration-btn:active {
+  transform: translateY(0);
+}
+
+/* Mini Confetti */
+.mini-confetti {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.mini-confetti-piece {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: #ffd700;
+  border-radius: 2px;
+  animation: mini-burst 0.8s ease-out forwards;
+}
+
+.mini-confetti-piece:nth-child(1) { animation-delay: 0s; background: #ff6b6b; }
+.mini-confetti-piece:nth-child(2) { animation-delay: 0.05s; background: #4ecdc4; }
+.mini-confetti-piece:nth-child(3) { animation-delay: 0.1s; background: #45b7d1; }
+.mini-confetti-piece:nth-child(4) { animation-delay: 0.15s; background: #96ceb4; }
+.mini-confetti-piece:nth-child(5) { animation-delay: 0.2s; background: #ffeaa7; }
+
+@keyframes mini-burst {
+  from {
+    opacity: 1;
+    transform: translate(0, 0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translate(
+      calc((var(--random-x, 50) - 50) * 2px),
+      calc((var(--random-y, 50) - 50) * 2px)
+    ) scale(0);
+  }
+}
+
+/* Dark Mode */
+@media (prefers-color-scheme: dark) {
+  .payout-success-message {
+    background: #1e1e1e;
+    color: white;
+  }
+
+  .success-title {
+    color: #66bb6a;
+  }
+
+  .success-subtitle {
+    color: #aaa;
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .payout-success-message {
+    padding: 32px 24px;
+    margin: 20px;
+  }
+
+  .success-icon {
+    font-size: 60px;
+  }
+
+  .success-title {
+    font-size: 24px;
+  }
+
+  .success-amount {
+    font-size: 40px;
+  }
+
+  .currency {
+    font-size: 28px;
+  }
+
+  .success-subtitle {
+    font-size: 14px;
+  }
+
+  .checkmark-svg {
+    width: 60px;
+    height: 60px;
+  }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .confetti-piece,
+  .bounce,
+  .success-title,
+  .success-amount,
+  .success-subtitle,
+  .success-checkmark {
+    animation: none !important;
+  }
+
+  .payout-success-message {
+    animation: fadeIn 0.3s ease-out;
+  }
+}
