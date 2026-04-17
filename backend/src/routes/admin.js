@@ -100,4 +100,115 @@ router.get('/workers', async (req, res, next) => {
   }
 });
 
+// ── GET /workers/explain?q=... (for XAI panel) ──────────────────────────────
+router.get('/workers/explain', async (req, res, next) => {
+  const q = String(req.query.q ?? '').trim();
+  if (!q) {
+    return res.status(400).json({ error: 'Query is required' });
+  }
+
+  try {
+    const { rows } = await pool.query(
+      `SELECT w.id,
+              w.name,
+              w.phone,
+              w.city,
+              w.platform,
+              w.avg_daily_earnings::float,
+              p.id AS policy_id,
+              p.status AS policy_status,
+              p.plan_tier,
+              p.premium_amount::float,
+              p.coverage_amount::float,
+              p.shieldsac_confidence::float,
+              p.shap_explanation
+       FROM workers w
+       LEFT JOIN LATERAL (
+         SELECT p.*
+         FROM policies p
+         WHERE p.worker_id = w.id
+         ORDER BY (p.status = 'ACTIVE') DESC, p.created_at DESC
+         LIMIT 1
+       ) p ON true
+       WHERE w.name ILIKE $1 OR w.phone ILIKE $1
+       ORDER BY (p.status = 'ACTIVE') DESC, w.updated_at DESC
+       LIMIT 1`,
+      [`%${q}%`],
+    );
+
+    if (!rows[0]) {
+      return res.status(404).json({
+        error: 'Worker not found',
+        message: 'No worker matches this name or phone number.',
+      });
+    }
+
+    const row = rows[0];
+    const shap = row.shap_explanation ?? {};
+    const premium = row.premium_amount ?? 0;
+    const rawPredicted = Number(shap.raw_predicted_premium ?? shap.final_premium_inr ?? premium);
+
+    res.json({
+      worker_id: row.id,
+      worker_name: row.name,
+      phone: row.phone,
+      city: row.city,
+      platform: row.platform,
+      avg_daily_earnings: row.avg_daily_earnings,
+      policy_id: row.policy_id,
+      policy_status: row.policy_status,
+      plan_tier: row.plan_tier,
+      premium_inr: premium,
+      coverage_inr: row.coverage_amount,
+      confidence: row.shieldsac_confidence,
+      shap_explanation: {
+        ...shap,
+        base_value: Number(shap.base_value ?? shap.base_premium_inr ?? premium),
+        top_factors: Array.isArray(shap.top_factors) ? shap.top_factors : [],
+      },
+      fairness_applied: rawPredicted > premium,
+      original_premium: rawPredicted,
+      source: 'db_live',
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ── GET /fraud/logs?limit=20 (for fraud monitor) ───────────────────────────
+router.get('/fraud/logs', async (req, res, next) => {
+  const limit = Math.min(Math.max(Number(req.query.limit ?? 20), 1), 200);
+  try {
+    const { rows } = await pool.query(
+      `SELECT fl.id,
+              fl.claim_id,
+              fl.check_type,
+              fl.result,
+              fl.confidence::float,
+              fl.details,
+              fl.checked_at,
+              c.status AS claim_status,
+              c.fraud_score::float,
+              t.type AS trigger_type,
+              t.dsi_score::float,
+              z.name AS zone_name,
+              z.city,
+              w.name AS worker_name
+       FROM fraud_logs fl
+       LEFT JOIN claims c ON c.id = fl.claim_id
+       LEFT JOIN triggers t ON t.id = c.trigger_id
+       LEFT JOIN zones z ON z.id = t.zone_id
+       LEFT JOIN policies p ON p.id = c.policy_id
+       LEFT JOIN workers w ON w.id = p.worker_id
+       ORDER BY fl.checked_at DESC
+       LIMIT $1`,
+      [limit],
+    );
+
+    res.json({ logs: rows, total: rows.length, source: 'db_live' });
+  } catch (err) {
+    next(err);
+  }
+});
+
 export default router;

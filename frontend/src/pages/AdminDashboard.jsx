@@ -17,23 +17,15 @@ import api              from '../services/api.js'
 
 const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:3001'
 
-// mock live stats until real backend is running
-const MOCK_STATS = {
-  active_policies: 1247,
-  policies_delta:  '+23%',
-  claims_today:    34,
-  claims_delta:    8,
-  loss_ratio:      62,
-  fraud_rate:      2.1,
-}
-
 export default function AdminDashboard() {
   const navigate = useNavigate()
-  const [stats,       setStats]       = useState(MOCK_STATS)
+  const [stats,       setStats]       = useState(null)
   const [zones,       setZones]       = useState([])
+  const [triggerZones, setTriggerZones] = useState([])
   const [wsConnected, setWsConnected] = useState(false)
   const [liveEvents,  setLiveEvents]  = useState([])
   const [loading,     setLoading]     = useState(true)
+  const [loadError,   setLoadError]   = useState('')
   const [lastRefresh, setLastRefresh] = useState(new Date())
   const wsRef  = useRef(null)
   const timer  = useRef(null)
@@ -51,27 +43,59 @@ export default function AdminDashboard() {
 
   // ── Load initial data ──────────────────────────────────────────
   const loadStats = useCallback(async () => {
+    setLoadError('')
     try {
-      const [statsRes, zonesRes] = await Promise.allSettled([
+      const [statsRes, zonesRes, adminZonesRes] = await Promise.allSettled([
         api.get('/admin/stats'),
         api.get('/triggers/dsi/heatmap'),
+        api.get('/admin/zones'),
       ])
+
       if (statsRes.status === 'fulfilled') {
         setStats(statsRes.value.data)
       } else if (statsRes.reason?.response?.status === 401) {
         sessionStorage.removeItem('gs_admin_token')
         navigate('/admin/login', { replace: true })
         return
+      } else {
+        setLoadError('Unable to load admin KPIs from backend.')
       }
+
       if (zonesRes.status === 'fulfilled') {
         const z = zonesRes.value.data?.zones ?? zonesRes.value.data ?? []
-        setZones(Array.isArray(z) ? z : [])
+        const heatmapZones = Array.isArray(z) ? z : []
+        const dbZones = adminZonesRes.status === 'fulfilled'
+          ? (adminZonesRes.value.data?.zones ?? [])
+          : []
+
+        if (heatmapZones.length > 0) {
+          setZones(heatmapZones)
+          setTriggerZones(Array.isArray(dbZones) && dbZones.length > 0 ? dbZones : heatmapZones)
+        } else {
+          // DB-backed fallback when DSI service has no zones.
+          const fallbackZones = dbZones
+          setZones(Array.isArray(fallbackZones) ? fallbackZones : [])
+          setTriggerZones(Array.isArray(fallbackZones) ? fallbackZones : [])
+        }
+      } else {
+        setLoadError((prev) => prev || 'Unable to load DSI zones.');
+        if (adminZonesRes.status === 'fulfilled') {
+          const fallbackZones = adminZonesRes.value.data?.zones ?? []
+          setZones(Array.isArray(fallbackZones) ? fallbackZones : [])
+          setTriggerZones(Array.isArray(fallbackZones) ? fallbackZones : [])
+        }
       }
-    } catch { /* keep mock data */ } finally {
+
+      if (adminZonesRes.status === 'rejected') {
+        setLoadError((prev) => prev || 'Unable to load trigger zones from backend.');
+      }
+    } catch {
+      setLoadError((prev) => prev || 'Admin panel is not synced with backend right now.')
+    } finally {
       setLoading(false)
       setLastRefresh(new Date())
     }
-  }, [])
+  }, [navigate])
 
   useEffect(() => {
     loadStats()
@@ -165,7 +189,13 @@ export default function AdminDashboard() {
       <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: 24 }}>
 
         {/* ── KPI row ─────────────────────────────────────────────── */}
-        <KPICards stats={stats} loading={loading} />
+        <KPICards stats={stats ?? {}} loading={loading} />
+
+        {loadError && (
+          <div style={{ padding: '10px 14px', borderRadius: 12, background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#FCA5A5', fontSize: '0.82rem' }}>
+            ⚠️ {loadError}
+          </div>
+        )}
 
         {/* ── Main grid: Map (wide) + Demo Panel ──────────────────── */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: 20, height: 520 }}>
@@ -194,7 +224,7 @@ export default function AdminDashboard() {
             <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: 20 }}>
               Fire trigger → claim → PADS → payout in one click
             </div>
-            <DemoControlPanel zones={zones} onTriggerFired={onTriggerFired} />
+            <DemoControlPanel zones={triggerZones} onTriggerFired={onTriggerFired} />
           </div>
         </div>
 

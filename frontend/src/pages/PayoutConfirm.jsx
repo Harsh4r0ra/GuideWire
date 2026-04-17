@@ -2,18 +2,51 @@ import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { CheckCircle, Share2, Home } from 'lucide-react'
 import confetti from 'canvas-confetti'
+import { getLocale, getStoredLanguage } from '../services/language.js'
+
+const COPY = {
+  en: {
+    payoutReceived: '💸 Payout Received',
+    claimSettled: '{trigger} claim settled',
+    transactionRef: 'Transaction Ref',
+    settledOn: 'Settled on',
+    zone: 'Zone',
+    source: 'Source',
+    status: 'Status',
+    completed: '🟢 COMPLETED',
+    shareReceipt: 'Share Receipt',
+    backToShield: 'Back to Shield',
+    tagLine: '🛡️ GIGASHIELD NEXUS · Powered by Guidewire Cloud',
+  },
+  hi: {
+    payoutReceived: '💸 भुगतान प्राप्त',
+    claimSettled: '{trigger} दावा निपट गया',
+    transactionRef: 'ट्रांजैक्शन रेफ',
+    settledOn: 'निपटान समय',
+    zone: 'ज़ोन',
+    source: 'स्रोत',
+    status: 'स्थिति',
+    completed: '🟢 पूर्ण',
+    shareReceipt: 'रसीद साझा करें',
+    backToShield: 'कवच पर वापस',
+    tagLine: '🛡️ GIGASHIELD NEXUS · Guidewire Cloud द्वारा संचालित',
+  },
+}
 
 export default function PayoutConfirm() {
   const location  = useLocation()
   const navigate  = useNavigate()
+  const language = getStoredLanguage()
+  const locale = getLocale(language)
+  const copy = COPY[language] ?? COPY.en
   const [visible, setVisible] = useState(false)
 
   const rawData = location.state ?? JSON.parse(sessionStorage.getItem('gs_payout') ?? '{}')
   const payout  = {
     amount:       rawData.amount        ?? rawData.claim_amount ?? 420,
     razorpay_ref: rawData.razorpay_ref  ?? `pay_DEMO_${Date.now()}`,
-    trigger_type: rawData.trigger_type  ?? 'HEAVY_RAIN',
-    zone_name:    rawData.zone_name     ?? 'Your zone',
+    trigger_type: rawData.trigger_type  ?? sessionStorage.getItem('gs_last_trigger') ?? 'HEAVY_RAIN',
+    zone_name:    rawData.zone_name     ?? localStorage.getItem('gs_zone_name') ?? localStorage.getItem('gs_city') ?? 'Your zone',
     payout_id:    rawData.payout_id     ?? '—',
   }
 
@@ -76,24 +109,24 @@ export default function PayoutConfirm() {
       {/* Amount */}
       <div style={{ textAlign: 'center', marginBottom: 36, animation: visible ? 'fadeInUp 0.7s ease' : 'none' }}>
         <div style={{ color: 'var(--success)', fontSize: '0.85rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>
-          💸 Payout Received
+          {copy.payoutReceived}
         </div>
         <div style={{ fontFamily: 'Poppins', fontSize: '4rem', fontWeight: 900, lineHeight: 1, color: '#fff', marginBottom: 6 }}>
-          ₹{Number(payout.amount).toLocaleString()}
+          ₹{Number(payout.amount).toLocaleString(locale)}
         </div>
         <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-          {TRIGGER_EMOJI[payout.trigger_type] ?? '⚡'} {payout.trigger_type.replace(/_/g,' ')} claim settled
+          {TRIGGER_EMOJI[payout.trigger_type] ?? '⚡'} {copy.claimSettled.replace('{trigger}', payout.trigger_type.replace(/_/g,' '))}
         </div>
       </div>
 
       {/* Details card */}
       <div className="card" style={{ width: '100%', maxWidth: 400, marginBottom: 24, animation: visible ? 'fadeInUp 0.8s ease' : 'none' }}>
         {[
-          ['Transaction Ref', payout.razorpay_ref.slice(0, 20) + (payout.razorpay_ref.length > 20 ? '…' : '')],
-          ['Settled on',      new Date().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })],
-          ['Zone',            payout.zone_name],
-          ['Source',          'Razorpay → UPI'],
-          ['Status',          '🟢 COMPLETED'],
+          [copy.transactionRef, payout.razorpay_ref.slice(0, 20) + (payout.razorpay_ref.length > 20 ? '…' : '')],
+          [copy.settledOn, new Date().toLocaleString(locale, { dateStyle: 'medium', timeStyle: 'short' })],
+          [copy.zone, payout.zone_name],
+          [copy.source, 'Razorpay → UPI'],
+          [copy.status, copy.completed],
         ].map(([k, v]) => (
           <div key={k} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid var(--border)' }}>
             <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>{k}</span>
@@ -105,15 +138,15 @@ export default function PayoutConfirm() {
       {/* Actions */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12, width: '100%', maxWidth: 400, animation: visible ? 'fadeInUp 0.9s ease' : 'none' }}>
         <button className="btn btn-success btn-full" onClick={share}>
-          <Share2 size={18} /> Share Receipt
+          <Share2 size={18} /> {copy.shareReceipt}
         </button>
         <button className="btn btn-ghost btn-full" onClick={() => navigate('/home')}>
-          <Home size={18} /> Back to Shield
+          <Home size={18} /> {copy.backToShield}
         </button>
       </div>
 
       <div style={{ marginTop: 32, fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'center' }}>
-        🛡️ GIGASHIELD NEXUS · Powered by Guidewire Cloud
+        {copy.tagLine}
       </div>
     </div>
   )

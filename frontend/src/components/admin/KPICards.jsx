@@ -7,7 +7,7 @@ export default function KPICards({ stats, loading }) {
     {
       label:   'Active Policies',
       value:   stats?.active_policies ?? 0,
-      delta:   stats?.policies_delta  ?? '+23%',
+      delta:   stats?.policies_delta  ?? '—',
       icon:    '🛡️',
       color:   'var(--amber)',
       bg:      'rgba(245,158,11,0.08)',
@@ -24,8 +24,8 @@ export default function KPICards({ stats, loading }) {
     },
     {
       label:   'Loss Ratio',
-      value:   `${stats?.loss_ratio ?? 62}%`,
-      delta:   '✓ Healthy',
+      value:   stats?.loss_ratio != null ? `${stats.loss_ratio}%` : '—',
+      delta:   stats?.loss_ratio != null ? 'Live' : '—',
       icon:    '📊',
       color:   'var(--success)',
       bg:      'rgba(16,185,129,0.08)',
@@ -33,8 +33,8 @@ export default function KPICards({ stats, loading }) {
     },
     {
       label:   'Fraud Rate',
-      value:   `${stats?.fraud_rate ?? 2.1}%`,
-      delta:   '✓ Below threshold',
+      value:   stats?.fraud_rate != null ? `${stats.fraud_rate}%` : '—',
+      delta:   stats?.fraud_rate != null ? 'Live' : '—',
       icon:    '🔬',
       color:   'var(--success)',
       bg:      'rgba(16,185,129,0.08)',

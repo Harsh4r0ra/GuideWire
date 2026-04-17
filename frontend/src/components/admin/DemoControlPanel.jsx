@@ -5,6 +5,11 @@
 import { useEffect, useState } from 'react'
 import { Zap, Loader, CheckCircle, AlertTriangle } from 'lucide-react'
 import api from '../../services/api.js'
+import { getAdminZoneDisplayName } from '../../services/zoneNames.js'
+
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+
+const isUuid = (value) => UUID_PATTERN.test(String(value ?? '').trim())
 
 const TRIGGER_TYPES = [
   { id: 'HEAVY_RAIN',    emoji: '🌧️', label: 'Heavy Rain',      dsi: 72 },
@@ -16,12 +21,13 @@ const TRIGGER_TYPES = [
 ]
 
 export default function DemoControlPanel({ zones, onTriggerFired }) {
+  const cityCounters = new Map()
   const zoneOptions = Array.isArray(zones)
     ? zones
         .map((z, idx) => ({
           id: z?.id ? String(z.id) : z?.zone_id ? String(z.zone_id) : `zone-${idx}`,
-          label: `${z?.name ?? z?.zone_name ?? 'Unknown zone'} (${z?.city ?? 'Unknown city'})`,
-          valid: Boolean(z?.id || z?.zone_id),
+          label: getAdminZoneDisplayName(z, cityCounters),
+          valid: isUuid(z?.id ?? z?.zone_id),
         }))
         .filter((z) => z.valid)
     : []
@@ -79,14 +85,12 @@ export default function DemoControlPanel({ zones, onTriggerFired }) {
           {zoneOptions.map((z) => (
             <option key={`zone-opt-${z.id}`} value={z.id}>{z.label}</option>
           ))}
-          {(!zones || zones.length === 0) && (
-            <>
-              <option value="demo-zone-mumbai-andheri">Andheri West (Mumbai)</option>
-              <option value="demo-zone-delhi-connaught">Connaught Place (Delhi)</option>
-              <option value="demo-zone-bangalore-koramangala">Koramangala (Bangalore)</option>
-            </>
-          )}
         </select>
+        {zoneOptions.length === 0 && (
+          <div style={{ marginTop: 8, fontSize: '0.75rem', color: 'var(--warning)' }}>
+            No valid backend zones found. Refresh the dashboard.
+          </div>
+        )}
       </div>
 
       {/* Trigger type grid */}

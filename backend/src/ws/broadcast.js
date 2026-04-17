@@ -104,6 +104,7 @@ export function broadcast(type, payload) {
       broadcastToWorker(c.worker_id, 'STORM_MODE', {
         trigger_id:   payload.trigger_id,
         zone_id:      payload.zone_id,
+        zone_name:    payload.zone_name ?? payload.zone_id ?? 'Your zone',
         trigger_type: payload.type,
         dsi_score:    payload.dsi_score,
         claim_id:     c.claim_id,

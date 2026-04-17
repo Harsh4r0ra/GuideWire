@@ -1,8 +1,7 @@
 /**
- * Fraud Monitor — live scrolling feed of the last 20 fraud log entries.
- * Polls every 8 seconds and highlights NEW items (< 60s old).
+ * Fraud Monitor — live scrolling feed from backend fraud_logs.
  */
-import { useState, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Shield, AlertTriangle, XCircle, CheckCircle } from 'lucide-react'
 import api from '../../services/api.js'
 
@@ -13,42 +12,38 @@ const RESULT_META = {
   REVIEW:  { color: 'var(--info)',    bg: 'rgba(59,130,246,0.1)',  Icon: Shield,       label: 'REVIEW' },
 }
 
-// Generate demo log until real API returns data
-function mockLogs() {
-  const types   = ['GPS_CHECK','IMU_CHECK','DEVICE_CHECK','DUPLICATE_CHECK','ANOMALY_DETECTION']
-  const results = ['PASS','PASS','PASS','WARN','FAIL']
-  return Array.from({ length: 12 }, (_, i) => ({
-    id:         `mock-${i}`,
-    check_type: types[i % types.length],
-    result:     results[i % results.length],
-    confidence: parseFloat((0.55 + Math.random() * 0.44).toFixed(2)),
-    claim_id:   `claim-demo-${i}`,
-    checked_at: new Date(Date.now() - i * 18_000).toISOString(),
-  }))
-}
-
 export default function FraudMonitor({ liveEvents }) {
-  const [logs,    setLogs]   = useState(mockLogs())
-  const [newIds,  setNewIds] = useState(new Set())
-  const listRef = useRef(null)
+  const [logs, setLogs] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
 
-  // Prepend new items from WS live events
+  const fetchLogs = useCallback(async () => {
+    try {
+      const res = await api.get('/admin/fraud/logs', { params: { limit: 20 } })
+      const nextLogs = res.data?.logs ?? []
+      setLogs(Array.isArray(nextLogs) ? nextLogs : [])
+      setError('')
+    } catch {
+      setError('Unable to sync fraud logs from backend.')
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchLogs()
+    const id = setInterval(fetchLogs, 8000)
+    return () => clearInterval(id)
+  }, [fetchLogs])
+
+  // Pull fresh data immediately when new live events arrive.
   useEffect(() => {
     if (!liveEvents?.length) return
-    const fresh = liveEvents.filter(e => e.type === 'CLAIM_STATUS_UPDATE')
-    if (!fresh.length) return
-    const newEntries = fresh.map(e => ({
-      id:         `ws-${Date.now()}`,
-      check_type: 'REALTIME_CHECK',
-      result:     e.payload?.fraud_score < 0.3 ? 'PASS' : e.payload?.fraud_score < 0.7 ? 'WARN' : 'FAIL',
-      confidence: 1 - (e.payload?.fraud_score ?? 0.2),
-      claim_id:   e.payload?.claim_id,
-      checked_at: new Date().toISOString(),
-    }))
-    setLogs(prev => [...newEntries, ...prev].slice(0, 20))
-    setNewIds(new Set(newEntries.map(e => e.id)))
-    setTimeout(() => setNewIds(new Set()), 8000)
-  }, [liveEvents])
+    const lastType = liveEvents[0]?.type
+    if (lastType === 'CLAIM_STATUS_UPDATE' || lastType === 'TRIGGER_FIRED') {
+      fetchLogs()
+    }
+  }, [liveEvents, fetchLogs])
 
   const isNew = (checked_at) => Date.now() - new Date(checked_at).getTime() < 60_000
 
@@ -64,7 +59,25 @@ export default function FraudMonitor({ liveEvents }) {
         </div>
       </div>
 
-      <div ref={listRef} style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 6 }}>
+      {error && (
+        <div style={{ marginBottom: 10, padding: '8px 10px', borderRadius: 8, background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#FCA5A5', fontSize: '0.74rem' }}>
+          ⚠️ {error}
+        </div>
+      )}
+
+      <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 6 }}>
+        {loading && logs.length === 0 && (
+          <div style={{ textAlign: 'center', padding: '20px 0', color: 'var(--text-muted)', fontSize: '0.82rem' }}>
+            Loading fraud checks...
+          </div>
+        )}
+
+        {!loading && logs.length === 0 && (
+          <div style={{ textAlign: 'center', padding: '20px 0', color: 'var(--text-muted)', fontSize: '0.82rem' }}>
+            No fraud checks yet.
+          </div>
+        )}
+
         {logs.map((log, i) => {
           const meta  = RESULT_META[log.result] ?? RESULT_META.PASS
           const Icon  = meta.Icon

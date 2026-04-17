@@ -4,6 +4,7 @@
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { getDSIHeatmap } from '../../services/api.js'
+import { getAdminZoneDisplayName } from '../../services/zoneNames.js'
 
 // DSI level → colour + emoji
 const LEVEL_META = {
@@ -42,11 +43,16 @@ function toFiniteNumber(value) {
 function normalizeZones(rawZones) {
   if (!Array.isArray(rawZones)) return []
 
+  const cityCounters = new Map()
+
   return rawZones
     .map((z, idx) => {
       const lat = toFiniteNumber(z?.lat)
       const lng = toFiniteNumber(z?.lng)
       const score = toFiniteNumber(z?.dsi_score)
+      const city = String(z?.city ?? '').trim()
+      const cityRank = cityCounters.get(city) ?? 0
+      cityCounters.set(city, cityRank + 1)
 
       if (lat === null || lng === null) return null
       if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return null
@@ -56,8 +62,9 @@ function normalizeZones(rawZones) {
         _key: z?.id ? String(z.id) : z?.zone_id ? String(z.zone_id) : `zone-${idx}`,
         lat,
         lng,
-        dsi_score: score ?? (Math.random() * 80 + 10),
+        dsi_score: score,
         source_level: z?.level,
+        display_name: getAdminZoneDisplayName(z, cityCounters, cityRank),
       }
     })
     .filter(Boolean)
@@ -168,13 +175,14 @@ export default function DSIHeatmap({ zones: propZones }) {
     markerLayer.clearLayers()
 
     normalizedZones.forEach(z => {
-      const score = Number(z.dsi_score)
-      const level = resolveLevelKey(z.source_level, score)
+      const score = Number.isFinite(z.dsi_score) ? Number(z.dsi_score) : null
+      const scoreForVisual = score ?? 0
+      const level = resolveLevelKey(z.source_level, scoreForVisual)
       const meta  = LEVEL_META[level]
 
       try {
         const circle = L.circleMarker([z.lat, z.lng], {
-          radius:      14 + (score / 100) * 10,
+          radius:      14 + (scoreForVisual / 100) * 10,
           color:       meta.color,
           fillColor:   meta.color,
           fillOpacity: 0.5,
@@ -223,12 +231,12 @@ export default function DSIHeatmap({ zones: propZones }) {
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
             <span style={{ fontSize: '1.5rem' }}>{selMeta.emoji}</span>
             <div>
-              <div style={{ fontWeight: 700 }}>{selected.name ?? selected.zone_name}</div>
+              <div style={{ fontWeight: 700 }}>{selected.display_name ?? selected.name ?? selected.zone_name}</div>
               <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{selected.city}</div>
             </div>
             <div style={{ marginLeft: 'auto', textAlign: 'right' }}>
               <div style={{ fontFamily: 'Poppins', fontWeight: 900, fontSize: '1.5rem', color: selMeta.color }}>
-                {Math.round(selected.dsi_score)}
+                {selected.dsi_score == null ? '—' : Math.round(selected.dsi_score)}
               </div>
               <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>DSI / 100</div>
             </div>
@@ -237,7 +245,7 @@ export default function DSIHeatmap({ zones: propZones }) {
             {[
               ['Active Policies', selected.active_policies ?? '—'],
               ['Radius', `${selected.radius_km ?? 3} km`],
-              ['Status', selMeta.label],
+              ['Status', selected.dsi_score == null ? 'Unavailable' : selMeta.label],
             ].map(([k, v]) => (
               <div key={k} style={{ flex: 1, background: 'var(--bg-700)', borderRadius: 8, padding: '8px 10px', textAlign: 'center' }}>
                 <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginBottom: 2 }}>{k}</div>

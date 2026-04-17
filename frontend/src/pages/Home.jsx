@@ -2,14 +2,15 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { RefreshCw, MapPin, Users, ChevronRight, Zap } from 'lucide-react'
 import { getWorkerDashboard, getZoneDSI, getErrorMsg } from '../services/api.js'
+import { getLocale, getStoredLanguage } from '../services/language.js'
 import BottomNav from '../components/BottomNav.jsx'
 import useWebSocket from '../hooks/useWebSocket.js'
 
 const DSI_LEVEL_META = {
-  NORMAL:    { label: 'Clear',      color: '#10B981', emoji: '☀️',  bg: 'rgba(16,185,129,0.1)'  },
-  ELEVATED:  { label: 'Elevated',   color: '#F59E0B', emoji: '🌤️', bg: 'rgba(245,158,11,0.1)'  },
-  HIGH:      { label: 'High Risk',  color: '#F97316', emoji: '⛈️', bg: 'rgba(249,115,22,0.1)'  },
-  CRITICAL:  { label: 'STORM',      color: '#EF4444', emoji: '🌪️', bg: 'rgba(239,68,68,0.14)'  },
+  NORMAL:    { labelKey: 'dsiClear',    color: '#10B981', emoji: '☀️',  bg: 'rgba(16,185,129,0.1)'  },
+  ELEVATED:  { labelKey: 'dsiElevated', color: '#F59E0B', emoji: '🌤️', bg: 'rgba(245,158,11,0.1)'  },
+  HIGH:      { labelKey: 'dsiHighRisk', color: '#F97316', emoji: '⛈️', bg: 'rgba(249,115,22,0.1)'  },
+  CRITICAL:  { labelKey: 'dsiStorm',    color: '#EF4444', emoji: '🌪️', bg: 'rgba(239,68,68,0.14)'  },
 }
 
 const DSI_LEVEL_ALIASES = {
@@ -20,10 +21,77 @@ const DSI_LEVEL_ALIASES = {
 }
 
 const PLAN_COVER = { LOW: 1500, MEDIUM: 3000, HIGH: 5000 }
+const PLAN_LABELS = {
+  en: { LOW: 'Basic Shield', MEDIUM: 'Pro Shield', HIGH: 'Elite Shield' },
+  hi: { LOW: 'बेसिक कवच', MEDIUM: 'प्रो कवच', HIGH: 'एलीट कवच' },
+}
 
 // 7-day mock DSI forecast (index 0 = today)
-const FORECAST_LABELS = ['Today', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-const mockForecast     = () => FORECAST_LABELS.map(() => Math.floor(Math.random() * 80 + 15))
+const FORECAST_LABELS = {
+  en: ['Today', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+  hi: ['आज', 'मंगल', 'बुध', 'गुरु', 'शुक्र', 'शनि', 'रवि'],
+}
+
+const COPY = {
+  en: {
+    good: 'Good',
+    live: 'Live',
+    weeklyCoverage: 'Weekly coverage',
+    active: 'ACTIVE',
+    inactive: 'INACTIVE',
+    plan: 'Plan',
+    weeklyPremium: 'Weekly premium',
+    expires: 'Expires',
+    totalReceived: 'Total received',
+    zoneWeatherRisk: 'Zone Weather Risk',
+    dsiScore: 'DSI Score / 100',
+    forecastTitle: '7-Day DSI Forecast',
+    totalClaims: 'Total claims',
+    shieldPoolActive: 'Shield Pool Active',
+    membersDiscount: '{members} members · {discount}% premium discount',
+    autoProtection: 'Auto-protection ON',
+    autoProtectionDesc: 'Claims auto-trigger when DSI > threshold',
+    quickRoutes: 'Quick Routes',
+    claims: 'Claims',
+    stormMode: 'Storm Mode',
+    payout: 'Payout',
+    admin: 'Admin',
+    dsiClear: 'Clear',
+    dsiElevated: 'Elevated',
+    dsiHighRisk: 'High Risk',
+    dsiStorm: 'STORM',
+  },
+  hi: {
+    good: 'शुभ',
+    live: 'लाइव',
+    weeklyCoverage: 'साप्ताहिक कवरेज',
+    active: 'सक्रिय',
+    inactive: 'निष्क्रिय',
+    plan: 'प्लान',
+    weeklyPremium: 'साप्ताहिक प्रीमियम',
+    expires: 'समाप्ति',
+    totalReceived: 'कुल प्राप्त',
+    zoneWeatherRisk: 'ज़ोन मौसम जोखिम',
+    dsiScore: 'DSI स्कोर / 100',
+    forecastTitle: '7-दिन DSI पूर्वानुमान',
+    totalClaims: 'कुल दावे',
+    shieldPoolActive: 'शील्ड पूल सक्रिय',
+    membersDiscount: '{members} सदस्य · {discount}% प्रीमियम छूट',
+    autoProtection: 'ऑटो-प्रोटेक्शन चालू',
+    autoProtectionDesc: 'DSI सीमा पार होने पर दावे स्वतः ट्रिगर होते हैं',
+    quickRoutes: 'त्वरित मार्ग',
+    claims: 'दावे',
+    stormMode: 'तूफान मोड',
+    payout: 'भुगतान',
+    admin: 'एडमिन',
+    dsiClear: 'सामान्य',
+    dsiElevated: 'बढ़ा हुआ',
+    dsiHighRisk: 'उच्च जोखिम',
+    dsiStorm: 'तूफान',
+  },
+}
+
+const mockForecast = () => FORECAST_LABELS.en.map(() => Math.floor(Math.random() * 80 + 15))
 
 function resolveDsiLevel(level) {
   const normalized = String(level ?? '').trim().toUpperCase()
@@ -35,6 +103,10 @@ function resolveDsiLevel(level) {
 export default function Home() {
   const workerId    = localStorage.getItem('gs_worker_id')
   const workerName  = localStorage.getItem('gs_worker_name') ?? 'Partner'
+  const language = getStoredLanguage()
+  const locale = getLocale(language)
+  const copy = COPY[language] ?? COPY.en
+  const forecastLabels = FORECAST_LABELS[language] ?? FORECAST_LABELS.en
   const { connected } = useWebSocket()
 
   const [data, setData]         = useState(null)
@@ -72,9 +144,12 @@ export default function Home() {
   const tier   = policy?.plan_tier ?? 'MEDIUM'
   const coverage = PLAN_COVER[tier] ?? 3000
   const premium  = parseFloat(policy?.premium_amount ?? 30)
+  const planLabels = PLAN_LABELS[language] ?? PLAN_LABELS.en
+  const planDisplayLabel = planLabels[tier] ?? `${tier} Shield`
 
   const dsiLevel = resolveDsiLevel(dsi?.level)
   const dsiMeta  = DSI_LEVEL_META[dsiLevel] ?? DSI_LEVEL_META.NORMAL
+  const dsiLabel = copy[dsiMeta.labelKey] ?? COPY.en[dsiMeta.labelKey] ?? dsiMeta.labelKey
   const dsiScore = dsi?.dsi_score ?? 32
 
   const maxBar = Math.max(...forecast, 1)
@@ -85,7 +160,7 @@ export default function Home() {
       <div style={{ padding: '52px 20px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
           <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-            Good {getGreeting()}
+            {copy.good} {getGreeting(language)}
           </div>
           <div style={{ fontFamily: 'Poppins', fontSize: '1.45rem', fontWeight: 800, marginTop: 2 }}>
             {workerName.split(' ')[0]} 👋
@@ -95,7 +170,7 @@ export default function Home() {
           {connected && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'var(--success-bg)', padding: '5px 10px', borderRadius: 99 }}>
               <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--success)', animation: 'pulse 2s infinite' }} />
-              <span style={{ fontSize: '0.7rem', color: 'var(--success)', fontWeight: 700 }}>Live</span>
+              <span style={{ fontSize: '0.7rem', color: 'var(--success)', fontWeight: 700 }}>{copy.live}</span>
             </div>
           )}
           <button onClick={() => load(true)} style={{ color: 'var(--text-muted)', display: 'flex' }}>
@@ -120,9 +195,9 @@ export default function Home() {
             <div>
               <div style={{ fontSize: '2.6rem', marginBottom: 8 }} className="animate-shield-pulse">🛡️</div>
               <div style={{ fontFamily: 'Poppins', fontSize: '1.5rem', fontWeight: 800, marginBottom: 4 }}>
-                ₹{coverage.toLocaleString()}
+                ₹{coverage.toLocaleString(locale)}
               </div>
-              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Weekly coverage</div>
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{copy.weeklyCoverage}</div>
             </div>
             <div style={{ textAlign: 'right' }}>
               <div style={{
@@ -132,13 +207,13 @@ export default function Home() {
               }}>
                 <div style={{ width: 7, height: 7, borderRadius: '50%', background: policy ? 'var(--success)' : 'var(--danger)', animation: policy ? 'pulse 2s infinite' : 'none' }} />
                 <span style={{ fontSize: '0.75rem', fontWeight: 700, color: policy ? 'var(--success)' : 'var(--danger)' }}>
-                  {policy ? 'ACTIVE' : 'INACTIVE'}
+                  {policy ? copy.active : copy.inactive}
                 </span>
               </div>
               {policy && (
                 <div style={{ marginTop: 10, textAlign: 'right' }}>
-                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Plan</div>
-                  <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>{policy.plan_tier} Shield</div>
+                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{copy.plan}</div>
+                  <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>{planDisplayLabel}</div>
                 </div>
               )}
             </div>
@@ -147,16 +222,16 @@ export default function Home() {
           {policy && (
             <div style={{ marginTop: 18, paddingTop: 16, borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', justifyContent: 'space-between' }}>
               <div>
-                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Weekly premium</div>
+                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{copy.weeklyPremium}</div>
                 <div style={{ fontWeight: 700, color: 'var(--amber)' }}>₹{premium}/wk</div>
               </div>
               <div>
-                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Expires</div>
-                <div style={{ fontWeight: 700 }}>{policy.end_date ? new Date(policy.end_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '—'}</div>
+                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{copy.expires}</div>
+                <div style={{ fontWeight: 700 }}>{policy.end_date ? new Date(policy.end_date).toLocaleDateString(locale, { day: 'numeric', month: 'short' }) : '—'}</div>
               </div>
               <div>
-                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Total received</div>
-                <div style={{ fontWeight: 700, color: 'var(--success)' }}>₹{(payouts?.total_received ?? 0).toLocaleString()}</div>
+                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{copy.totalReceived}</div>
+                <div style={{ fontWeight: 700, color: 'var(--success)' }}>₹{(payouts?.total_received ?? 0).toLocaleString(locale)}</div>
               </div>
             </div>
           )}
@@ -167,12 +242,12 @@ export default function Home() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
             <div>
               <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>
-                Zone Weather Risk
+                {copy.zoneWeatherRisk}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <span style={{ fontSize: '1.8rem' }}>{dsiMeta.emoji}</span>
                 <div>
-                  <div style={{ fontWeight: 800, color: dsiMeta.color, fontSize: '1.05rem' }}>{dsiMeta.label}</div>
+                  <div style={{ fontWeight: 800, color: dsiMeta.color, fontSize: '1.05rem' }}>{dsiLabel}</div>
                   {worker?.zone_name && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                       <MapPin size={11} /> {worker.zone_name}
@@ -183,7 +258,7 @@ export default function Home() {
             </div>
             <div style={{ textAlign: 'right' }}>
               <div style={{ fontFamily: 'Poppins', fontSize: '2rem', fontWeight: 900, color: dsiMeta.color }}>{dsiScore}</div>
-              <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>DSI Score / 100</div>
+              <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>{copy.dsiScore}</div>
             </div>
           </div>
 
@@ -196,7 +271,7 @@ export default function Home() {
         {/* ── 7-day DSI Forecast ── */}
         <div className="card">
           <div style={{ fontWeight: 700, fontSize: '0.82rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 16 }}>
-            7-Day DSI Forecast
+            {copy.forecastTitle}
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', height: 72 }}>
             {forecast.map((val, i) => (
@@ -213,7 +288,7 @@ export default function Home() {
                   minHeight: 4,
                 }} />
                 <span style={{ fontSize: '0.58rem', color: i === 0 ? 'var(--amber)' : 'var(--text-muted)', fontWeight: i === 0 ? 700 : 400 }}>
-                  {FORECAST_LABELS[i]}
+                  {forecastLabels[i]}
                 </span>
               </div>
             ))}
@@ -226,13 +301,13 @@ export default function Home() {
             <div style={{ fontFamily: 'Poppins', fontSize: '1.7rem', fontWeight: 800, color: 'var(--amber)' }}>
               {claims?.total_claims ?? 0}
             </div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 2 }}>Total claims</div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 2 }}>{copy.totalClaims}</div>
           </div>
           <div className="card" style={{ textAlign: 'center' }}>
             <div style={{ fontFamily: 'Poppins', fontSize: '1.7rem', fontWeight: 800, color: 'var(--success)' }}>
-              ₹{(payouts?.total_received ?? 0).toLocaleString()}
+              ₹{(payouts?.total_received ?? 0).toLocaleString(locale)}
             </div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 2 }}>Total received</div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 2 }}>{copy.totalReceived}</div>
           </div>
         </div>
 
@@ -243,9 +318,11 @@ export default function Home() {
               <Users size={22} style={{ color: 'var(--info)' }} />
             </div>
             <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>Shield Pool Active</div>
+                <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>{copy.shieldPoolActive}</div>
               <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                {policy?.member_count ?? 0} members · {policy?.premium_discount_pct ?? 10}% premium discount
+                  {copy.membersDiscount
+                    .replace('{members}', policy?.member_count ?? 0)
+                    .replace('{discount}', policy?.premium_discount_pct ?? 10)}
               </div>
             </div>
             <ChevronRight size={18} style={{ color: 'var(--text-muted)' }} />
@@ -256,21 +333,21 @@ export default function Home() {
         <div className="card" style={{ display: 'flex', alignItems: 'center', gap: 14, background: 'rgba(245,158,11,0.06)', borderColor: 'rgba(245,158,11,0.2)' }}>
           <div style={{ fontSize: '1.5rem' }}>⚡</div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--amber)' }}>Auto-protection ON</div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Claims auto-trigger when DSI &gt; threshold</div>
+            <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--amber)' }}>{copy.autoProtection}</div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{copy.autoProtectionDesc}</div>
           </div>
         </div>
 
         {/* ── Quick routes ── */}
         <div className="card">
           <div style={{ fontWeight: 700, fontSize: '0.82rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 12 }}>
-            Quick Routes
+            {copy.quickRoutes}
           </div>
           <div className="quick-links-grid">
-            <Link className="quick-link-btn" to="/claims">Claims</Link>
-            <Link className="quick-link-btn" to="/storm">Storm Mode</Link>
-            <Link className="quick-link-btn" to="/payout">Payout</Link>
-            <Link className="quick-link-btn" to="/admin">Admin</Link>
+            <Link className="quick-link-btn" to="/claims">{copy.claims}</Link>
+            <Link className="quick-link-btn" to="/storm">{copy.stormMode}</Link>
+            <Link className="quick-link-btn" to="/payout">{copy.payout}</Link>
+            <Link className="quick-link-btn" to="/admin">{copy.admin}</Link>
           </div>
         </div>
 
@@ -287,8 +364,13 @@ export default function Home() {
   )
 }
 
-function getGreeting() {
+function getGreeting(language) {
   const h = new Date().getHours()
+  if (language === 'hi') {
+    if (h < 12) return 'सुबह'
+    if (h < 17) return 'दोपहर'
+    return 'शाम'
+  }
   if (h < 12) return 'morning'
   if (h < 17) return 'afternoon'
   return 'evening'
